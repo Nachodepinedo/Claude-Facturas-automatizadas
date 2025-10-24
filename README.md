@@ -14,8 +14,9 @@ Aplicación web para buscar y descargar facturas de correos corporativos.
 
 ### Credenciales de Acceso
 
-- **Usuario:** `yuderky.maldonado@brooklynfitboxing.com`
-- **Contraseña:** `JMaldonado1975`
+Las credenciales están configuradas en el archivo `.env.local` (no incluido en el repositorio).
+
+Para desarrollo local, solicita las credenciales al administrador del proyecto.
 
 ### Ejecutar la Aplicación
 
@@ -101,17 +102,22 @@ buscador-facturas/
 ### Variables de Entorno (`.env.local`)
 
 ```env
-# Credenciales actuales
-AUTH_USER=juderky.maldonado@brooklynfitboxing.com
-AUTH_PASSWORD=JMaldonado1975
+# Autenticación de la aplicación
+AUTH_USER=tu-email@empresa.com
+AUTH_PASSWORD=tu-contraseña-segura
 
-# Para producción
-JWT_SECRET=tu-secreto-super-seguro-cambiame-en-produccion
+# Secret para tokens JWT
+JWT_SECRET=genera-un-secreto-aleatorio-seguro
 
 # Gmail API (cuando esté configurado)
-# GMAIL_SERVICE_ACCOUNT_JSON=
-# GMAIL_DOMAIN=brooklynfitboxing.com
+GMAIL_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
+GMAIL_DOMAIN=tu-dominio.com
+
+# Buzones corporativos a buscar (separados por comas)
+GMAIL_MAILBOXES=email1@empresa.com,email2@empresa.com,facturas@empresa.com
 ```
+
+**IMPORTANTE:** Nunca incluyas credenciales reales en el repositorio. Estos son ejemplos de formato.
 
 ## 🚀 Próximos Pasos
 

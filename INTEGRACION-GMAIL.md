@@ -25,28 +25,28 @@ Opción A - Archivo JSON en la misma carpeta:
 2. Edita `.env.local`:
 
 ```env
-# Usuario y contraseña (ya configurado)
-AUTH_USER=juderky.maldonado@brooklynfitboxing.com
-AUTH_PASSWORD=JMaldonado1975
+# Usuario y contraseña
+AUTH_USER=tu-email@empresa.com
+AUTH_PASSWORD=tu-contraseña-segura
 
 JWT_SECRET=tu-secreto-super-seguro-cambiame-en-produccion
 
 # Gmail API - NUEVO
 GMAIL_CREDENTIALS_PATH=./gmail-credentials.json
-GMAIL_DOMAIN=brooklynfitboxing.com
+GMAIL_DOMAIN=tu-dominio.com
 ```
 
 Opción B - JSON inline (más seguro para producción):
 
 ```env
-AUTH_USER=juderky.maldonado@brooklynfitboxing.com
-AUTH_PASSWORD=JMaldonado1975
+AUTH_USER=tu-email@empresa.com
+AUTH_PASSWORD=tu-contraseña-segura
 
 JWT_SECRET=tu-secreto-super-seguro-cambiame-en-produccion
 
 # Gmail API - JSON completo en una línea
 GMAIL_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"...","private_key":"..."}
-GMAIL_DOMAIN=brooklynfitboxing.com
+GMAIL_DOMAIN=tu-dominio.com
 ```
 
 ### 3. Crear Helper de Gmail
@@ -104,13 +104,12 @@ export function getGmailClient() {
 export async function searchInAllMailboxes(query: string, maxResults = 50) {
   const gmail = getGmailClient()
 
-  // Lista de buzones corporativos a buscar
-  const mailboxes = [
-    'ignacio.depinedo@brooklynfitboxing.com',
-    'katerin.lopez@brooklynfitboxing.com',
-    'compras@brooklynfitboxing.com',
-    // Agregar más según necesites
-  ]
+  // Lista de buzones corporativos desde variable de entorno
+  const mailboxesEnv = process.env.GMAIL_MAILBOXES
+  if (!mailboxesEnv) {
+    throw new Error('GMAIL_MAILBOXES no configurado')
+  }
+  const mailboxes = mailboxesEnv.split(',').map(email => email.trim())
 
   const allResults = []
 
@@ -322,7 +321,7 @@ Deberías ver en la consola:
 
 ### 3. Hacer una búsqueda de prueba
 
-1. Login con: `juderky.maldonado@brooklynfitboxing.com` / `JMaldonado1975`
+1. Login con las credenciales configuradas en `.env.local`
 2. Buscar: `Decathlon`
 3. Deberían aparecer correos REALES de tu empresa
 4. Descargar un PDF y verificar que sea real

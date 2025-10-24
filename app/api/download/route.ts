@@ -25,8 +25,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Si no se especifica mailbox, intentar con el primer buzón
-    const targetMailbox = mailbox || 'ignacio.depinedo@brooklynfitboxing.com'
+    // Si no se especifica mailbox, usar el primer buzón de la variable de entorno
+    if (!mailbox) {
+      const mailboxesEnv = process.env.GMAIL_MAILBOXES
+      if (!mailboxesEnv) {
+        return NextResponse.json(
+          { error: 'GMAIL_MAILBOXES no configurado' },
+          { status: 500 }
+        )
+      }
+      mailbox = mailboxesEnv.split(',')[0].trim()
+    }
+    const targetMailbox = mailbox
 
     console.log(`📥 Descargando adjunto ${filename} de ${emailId} (mailbox: ${targetMailbox})`)
 

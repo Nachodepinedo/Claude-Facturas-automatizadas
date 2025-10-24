@@ -38,15 +38,15 @@ export function getGmailClient(userEmail?: string) {
 
 // Helper para buscar en múltiples buzones
 export async function searchInAllMailboxes(query: string, maxResults = 50) {
-  // Lista de buzones corporativos a buscar
-  const mailboxes = [
-    'ignacio.depinedo@brooklynfitboxing.com',
-    'katerin.lopez@brooklynfitboxing.com',
-    'yuderky.maldonado@brooklynfitboxing.com',
-    'compras@brooklynfitboxing.com',
-    'facturas@brooklynfitboxing.com',
-    // Agregar más buzones según necesites
-  ]
+  // Lista de buzones corporativos desde variable de entorno
+  // Formato: email1@domain.com,email2@domain.com,email3@domain.com
+  const mailboxesEnv = process.env.GMAIL_MAILBOXES
+  
+  if (!mailboxesEnv) {
+    throw new Error('GMAIL_MAILBOXES no está configurado en las variables de entorno')
+  }
+  
+  const mailboxes = mailboxesEnv.split(',').map(email => email.trim())
 
   const allResults: any[] = []
   const resultsPerMailbox = Math.ceil(maxResults / mailboxes.length)

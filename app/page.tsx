@@ -55,7 +55,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="usuario@brooklynfitboxing.com"
+              placeholder="usuario@empresa.com"
               required
               style={styles.input}
             />

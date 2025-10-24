@@ -36,6 +36,17 @@ yarn-error.log*
 # Credentials - MUY IMPORTANTE NO SUBIR
 gmail-credentials.json
 *.json.backup
+*credentials*.json
+*.key
+*.pem
+*.p12
+
+# Archivos de secretos y configuración sensible
+.env
+.env.production
+.env.staging
+secrets/
+*.secret
 
 # TypeScript
 *.tsbuildinfo
