@@ -4,12 +4,29 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
-    // Obtener credenciales del env
-    const validEmail = process.env.AUTH_USER
-    const validPassword = process.env.AUTH_PASSWORD
+    // Obtener lista de usuarios autorizados
+    // Formato: email1:password1,email2:password2,email3:password3
+    const authUsersEnv = process.env.AUTH_USERS
+    
+    if (!authUsersEnv) {
+      return NextResponse.json(
+        { error: 'Sistema de autenticación no configurado' },
+        { status: 500 }
+      )
+    }
+
+    // Parsear usuarios
+    const authorizedUsers = authUsersEnv.split(',').map(userStr => {
+      const [userEmail, userPassword] = userStr.trim().split(':')
+      return { email: userEmail, password: userPassword }
+    })
 
     // Validar credenciales
-    if (email === validEmail && password === validPassword) {
+    const validUser = authorizedUsers.find(
+      u => u.email === email && u.password === password
+    )
+
+    if (validUser) {
       // Crear un token simple (en producción usar JWT real)
       const token = Buffer.from(`${email}:${Date.now()}`).toString('base64')
 
