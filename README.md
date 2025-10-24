@@ -6,9 +6,11 @@ Aplicación web para buscar y descargar facturas de correos corporativos.
 
 - ✅ Login seguro con usuario/contraseña
 - ✅ Búsqueda inteligente de facturas
+- ✅ **Búsqueda automática en TODOS los buzones del dominio** 🌐
 - ✅ Descarga de PDFs adjuntos
 - ✅ Interfaz moderna y responsive
 - ✅ Sin base de datos (búsqueda en tiempo real)
+- ✅ Caché inteligente para mejor rendimiento
 
 ## 🚀 Inicio Rápido
 
@@ -69,12 +71,27 @@ La aplicación estará disponible en: **http://localhost:3000**
 - [x] API de búsqueda (con datos de prueba)
 - [x] API de descarga de PDFs (con PDF de ejemplo)
 
-### 🚧 Pendiente
+### ✅ Integración con Gmail API - COMPLETADA
 
-- [ ] **Integración con Gmail API**
-  - Necesita configuración del Service Account
-  - Tu compañera admin debe seguir la guía: `guia-configuracion-gmail-workspace-mcp.md`
-  - Una vez configurado, reemplazar el código mock con el código real
+- [x] **Código de integración con Gmail API implementado**
+  - [x] Búsqueda automática en todos los buzones del dominio
+  - [x] Sistema de caché para mejor rendimiento
+  - [x] Búsqueda paralela en batches
+  - [x] Soporte para Directory API
+
+### 🔧 Configuración Pendiente (solo una vez)
+
+- [ ] **Tu compañera admin debe configurar:**
+  - Service Account en Google Cloud
+  - Domain-Wide Delegation con los scopes necesarios
+  - Agregar scope de Directory API: `https://www.googleapis.com/auth/admin.directory.user.readonly`
+  - Ver guía: `guia-configuracion-gmail-workspace-mcp.md`
+
+- [ ] **Tú debes configurar en `.env.local`:**
+  - `GMAIL_SERVICE_ACCOUNT_JSON` (el JSON completo)
+  - `GMAIL_DOMAIN=brooklynfitboxing.com`
+  - `GMAIL_ADMIN_EMAIL=admin@brooklynfitboxing.com`
+  - Ver guía: `CONFIGURACION-DOMINIO-COMPLETO.md`
 
 ## 📁 Estructura del Proyecto
 
@@ -111,13 +128,21 @@ JWT_SECRET=genera-un-secreto-aleatorio-seguro
 
 # Gmail API (cuando esté configurado)
 GMAIL_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
-GMAIL_DOMAIN=tu-dominio.com
 
-# Buzones corporativos a buscar (separados por comas)
-GMAIL_MAILBOXES=email1@empresa.com,email2@empresa.com,facturas@empresa.com
+# Configuración de dominio (REQUERIDAS para buscar en todo el dominio)
+GMAIL_DOMAIN=brooklynfitboxing.com
+GMAIL_ADMIN_EMAIL=admin@brooklynfitboxing.com
+
+# OPCIONAL: Buzones específicos (si está vacío, busca en TODOS los del dominio)
+# GMAIL_MAILBOXES=contabilidad@empresa.com,facturas@empresa.com
 ```
 
-**IMPORTANTE:** Nunca incluyas credenciales reales en el repositorio. Estos son ejemplos de formato.
+**IMPORTANTE:** 
+- Nunca incluyas credenciales reales en el repositorio
+- Si `GMAIL_MAILBOXES` está vacío/comentado: busca automáticamente en TODOS los buzones del dominio
+- Si `GMAIL_MAILBOXES` está configurado: busca solo en esos buzones (más rápido)
+
+📖 **Ver guía completa:** `CONFIGURACION-DOMINIO-COMPLETO.md`
 
 ## 🚀 Próximos Pasos
 
@@ -194,6 +219,8 @@ Si tienes problemas:
 
 ## 🔗 Documentación Relacionada
 
+- `CONFIGURACION-DOMINIO-COMPLETO.md` - **Configurar búsqueda en TODO el dominio** 🌐
+- `INTEGRACION-GMAIL.md` - Guía de integración con Gmail API
 - `proyecto-buscador-simple-sin-db.md` - Arquitectura completa
 - `guia-configuracion-gmail-workspace-mcp.md` - Para admin
 - `ejemplos-casos-uso-facturas.md` - Casos de uso reales
