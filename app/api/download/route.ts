@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const emailId = searchParams.get('emailId')
     const attachmentId = searchParams.get('attachmentId')
     const filename = searchParams.get('filename')
-    const mailbox = searchParams.get('mailbox')
+    let mailbox = searchParams.get('mailbox')
 
     if (!emailId || !attachmentId || !filename) {
       return NextResponse.json(
