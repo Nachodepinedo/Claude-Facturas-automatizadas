@@ -168,15 +168,15 @@ GMAIL_ADMIN_EMAIL=admin@brooklynfitboxing.com
 La aplicación actualmente muestra 3 correos de ejemplo:
 
 1. **Pedido ES51JYAU44AQ-A** (Decathlon)
-   - Para: ignacio.depinedo@brooklynfitboxing.com
+   - Para: ejemplo@tuempresa.com
    - 2 adjuntos: factura.pdf, albaran.pdf
 
 2. **Pedido ES51KKCHXWAQ-A** (Decathlon)
-   - Para: katerin.lopez@brooklynfitboxing.com
+   - Para: ejemplo@tuempresa.com
    - 1 adjunto: factura.pdf
 
 3. **Pedido ES5273YU4XBC-A** (Decathlon)
-   - Para: compras@brooklynfitboxing.com
+   - Para: ejemplo@tuempresa.com
    - 1 adjunto: confirmacion_envio.pdf
 
 ## 🎨 Capturas
