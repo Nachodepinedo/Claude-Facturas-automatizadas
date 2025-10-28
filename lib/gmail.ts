@@ -169,6 +169,7 @@ export async function searchInAllMailboxes(query: string, maxResults = 50) {
             const messagesWithMailbox = response.data.messages.map((msg) => ({
               ...msg,
               _mailbox: mailbox,
+              internalDate: parseInt(msg.internalDate || '0'), // Capturar fecha aquí
             }))
             allResults.push(...messagesWithMailbox)
           }
@@ -181,6 +182,11 @@ export async function searchInAllMailboxes(query: string, maxResults = 50) {
   }
 
   console.log(`✅ Encontrados ${allResults.length} resultados en total`)
+  // ORDENAR por fecha descendente (más recientes primero)
+  allResults.sort((a, b) => b.internalDate - a.internalDate)
+
+  console.log(`📅 Resultados ordenados por fecha`)
+
   return allResults.slice(0, maxResults) // Limitar al máximo solicitado
 }
 
