@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import SearchLoading from '@/components/SearchLoading'
 
 interface SearchResult {
   id: string
@@ -22,9 +23,12 @@ interface SearchResult {
 export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
+  const [months, setMonths] = useState(3) // Por defecto 3 meses
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [user, setUser] = useState('')
+  const [progress, setProgress] = useState(0)
+  const [totalMailboxes, setTotalMailboxes] = useState(535)
   const router = useRouter()
 
   useEffect(() => {
@@ -46,29 +50,66 @@ export default function SearchPage() {
     setLoading(true)
     setError('')
     setResults([])
+    setProgress(0)
 
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch('/api/search', {
+
+      // Usar fetch regular para SSE
+      const res = await fetch('/api/search-stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, months }),
       })
 
-      const data = await res.json()
+      if (!res.ok) {
+        const errorData = await res.json()
+        setError(errorData.error || 'Error en la búsqueda')
+        setLoading(false)
+        return
+      }
 
-      if (res.ok) {
-        setResults(data.results || [])
-        if (data.results?.length === 0) {
-          setError('No se encontraron resultados')
+      // Leer el stream de respuesta
+      const reader = res.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        setError('Error al conectar con el servidor')
+        setLoading(false)
+        return
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6))
+
+            if (data.type === 'progress') {
+              setProgress(data.processed)
+              setTotalMailboxes(data.total)
+            } else if (data.type === 'complete') {
+              setResults(data.results || [])
+              if (data.results?.length === 0) {
+                setError('No se encontraron resultados')
+              }
+            } else if (data.type === 'error') {
+              setError(data.error)
+            }
+          }
         }
-      } else {
-        setError(data.error || 'Error en la búsqueda')
       }
     } catch (err) {
+      console.error('Error en búsqueda:', err)
       setError('Error de conexión')
     } finally {
       setLoading(false)
@@ -119,6 +160,8 @@ export default function SearchPage() {
   }
 
   return (
+    <>
+      {loading && <SearchLoading progress={progress} total={totalMailboxes} estimatedTime={15} />}
     <div style={styles.container}>
       <div style={styles.header}>
         <h1 style={styles.title}>🔍 Buscador de Facturas</h1>
@@ -139,6 +182,18 @@ export default function SearchPage() {
             placeholder="Buscar por ID, empresa, pedido, monto..."
             style={styles.searchInput}
           />
+          <select
+            value={months}
+            onChange={(e) => setMonths(Number(e.target.value))}
+            style={styles.monthsSelect}
+          >
+            <option value={1}>Último mes</option>
+            <option value={3}>Últimos 3 meses</option>
+            <option value={6}>Últimos 6 meses</option>
+            <option value={12}>Último año</option>
+            <option value={24}>Últimos 2 años</option>
+            <option value={0}>Todo (sin límite)</option>
+          </select>
           <button
             type="submit"
             disabled={loading}
@@ -209,6 +264,7 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+    </>
   )
 }
 
@@ -273,6 +329,16 @@ const styles = {
     borderRadius: '8px',
     fontSize: '15px',
     outline: 'none',
+  },
+  monthsSelect: {
+    padding: '14px 12px',
+    border: '2px solid #e0e0e0',
+    borderRadius: '8px',
+    fontSize: '15px',
+    outline: 'none',
+    cursor: 'pointer',
+    background: 'white',
+    minWidth: '160px',
   },
   searchButton: {
     padding: '14px 30px',

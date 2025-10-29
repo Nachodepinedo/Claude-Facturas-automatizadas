@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { query } = await request.json()
+    const { query, months = 3 } = await request.json()
 
     if (!query || query.trim().length < 2) {
       return NextResponse.json(
@@ -21,8 +21,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Construir query de Gmail
-    const gmailQuery = `has:attachment (factura OR invoice OR pedido OR albaran OR albarán) ${query}`
+    // Calcular fecha de inicio según el filtro de meses
+    let dateFilter = ''
+    if (months > 0) {
+      const startDate = new Date()
+      startDate.setMonth(startDate.getMonth() - months)
+      const year = startDate.getFullYear()
+      const month = String(startDate.getMonth() + 1).padStart(2, '0')
+      const day = String(startDate.getDate()).padStart(2, '0')
+      dateFilter = ` after:${year}/${month}/${day}`
+    }
+
+    // Construir query de Gmail con filtro de fecha
+    const gmailQuery = `has:attachment (factura OR invoice OR pedido OR albaran OR albarán) ${query}${dateFilter}`
 
     console.log('🔍 Buscando en Gmail:', gmailQuery)
 

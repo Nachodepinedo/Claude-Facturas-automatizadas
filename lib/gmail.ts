@@ -127,7 +127,11 @@ async function getAllDomainUsers(): Promise<string[]> {
 }
 
 // Helper para buscar en múltiples buzones
-export async function searchInAllMailboxes(query: string, maxResults = 50) {
+export async function searchInAllMailboxes(
+  query: string,
+  maxResults = 50,
+  onProgress?: (processed: number, total: number) => void
+) {
   let mailboxes: string[]
 
   // Opción 1: Si GMAIL_MAILBOXES está configurado, usar solo esos buzones (más rápido)
@@ -147,8 +151,8 @@ export async function searchInAllMailboxes(query: string, maxResults = 50) {
   const allResults: any[] = []
   const resultsPerMailbox = Math.max(1, Math.ceil(maxResults / mailboxes.length))
 
-  // Buscar en paralelo en grupos de 5 buzones para no saturar la API
-  const BATCH_SIZE = 5
+  // Buscar en paralelo en grupos de 20 buzones para no saturar la API
+  const BATCH_SIZE = 20
   
   for (let i = 0; i < mailboxes.length; i += BATCH_SIZE) {
     const batch = mailboxes.slice(i, i + BATCH_SIZE)
@@ -179,6 +183,12 @@ export async function searchInAllMailboxes(query: string, maxResults = 50) {
         }
       })
     )
+
+    // Reportar progreso después de cada batch
+    if (onProgress) {
+      const processed = Math.min(i + BATCH_SIZE, mailboxes.length)
+      onProgress(processed, mailboxes.length)
+    }
   }
 
   console.log(`✅ Encontrados ${allResults.length} resultados en total`)
