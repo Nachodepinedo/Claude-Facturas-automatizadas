@@ -82,40 +82,54 @@ export default function SearchPage() {
         return
       }
 
+      let buffer = '' // Buffer para acumular datos parciales
+
       while (true) {
         const { done, value } = await reader.read()
 
         if (done) break
 
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n')
+        // Agregar el nuevo chunk al buffer
+        buffer += decoder.decode(value, { stream: true })
+
+        // Procesar líneas completas
+        const lines = buffer.split('\n')
+
+        // La última línea puede estar incompleta, guardarla en el buffer
+        buffer = lines.pop() || ''
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6))
+          if (line.startsWith('data: ') && line.trim().length > 6) {
+            try {
+              const jsonStr = line.slice(6).trim()
+              if (jsonStr) {
+                const data = JSON.parse(jsonStr)
 
-            if (data.type === 'progress') {
-              setProgress(data.processed)
-              setTotalMailboxes(data.total)
-            } else if (data.type === 'complete') {
-              setResults(data.results || [])
-              if (data.results?.length === 0) {
-                setError('No se encontraron resultados')
+                if (data.type === 'progress') {
+                  setProgress(data.processed)
+                  setTotalMailboxes(data.total)
+                } else if (data.type === 'complete') {
+                  setResults(data.results || [])
+                  if (data.results?.length === 0) {
+                    setError('No se encontraron resultados')
+                  }
+                } else if (data.type === 'error') {
+                  setError(data.error)
+                }
               }
-            } else if (data.type === 'error') {
-              setError(data.error)
+            } catch (parseErr) {
+              console.error('Error parsing SSE data:', parseErr, 'Line:', line)
             }
           }
         }
       }
     } catch (err) {
       console.error('Error en búsqueda:', err)
-      setError('Error de conexión')
+      setError('Error de conexión: ' + (err as Error).message)
     } finally {
       setLoading(false)
     }
   }
-
   const handleDownload = async (emailId: string, attachmentId: string, filename: string, mailbox?: string) => {
     try {
       const token = localStorage.getItem('token')

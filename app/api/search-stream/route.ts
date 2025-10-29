@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
               total
             })
             controller.enqueue(encoder.encode(`data: ${data}\n\n`))
+            console.log(`📊 Progreso SSE: ${processed}/${total}`)
           }
 
           // Buscar en todos los buzones con callback de progreso
