@@ -25,9 +25,10 @@ export default function LoginPage() {
       const data = await res.json()
 
       if (res.ok) {
-        // Guardar token en localStorage
+        // Guardar token y email completo en localStorage
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', data.user)
+        localStorage.setItem('userEmail', data.userEmail) // Email completo para mapeo de grupos
         // Redirigir a la página de búsqueda
         router.push('/search')
       } else {

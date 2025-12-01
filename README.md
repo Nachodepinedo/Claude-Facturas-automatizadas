@@ -120,18 +120,17 @@ buscador-facturas/
 
 ```env
 # Autenticación de la aplicación
-AUTH_USER=tu-email@empresa.com
-AUTH_PASSWORD=tu-contraseña-segura
+AUTH_USERS=usuario1@empresa.com:password1,usuario2@empresa.com:password2
 
 # Secret para tokens JWT
-JWT_SECRET=genera-un-secreto-aleatorio-seguro
+JWT_SECRET=genera-un-secreto-aleatorio-seguro-minimo-32-caracteres
 
 # Gmail API (cuando esté configurado)
 GMAIL_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 
 # Configuración de dominio (REQUERIDAS para buscar en todo el dominio)
-GMAIL_DOMAIN=brooklynfitboxing.com
-GMAIL_ADMIN_EMAIL=admin@brooklynfitboxing.com
+GMAIL_DOMAIN=tudominio.com
+GMAIL_ADMIN_EMAIL=admin@tudominio.com
 
 # OPCIONAL: Buzones específicos (si está vacío, busca en TODOS los del dominio)
 # GMAIL_MAILBOXES=contabilidad@empresa.com,facturas@empresa.com

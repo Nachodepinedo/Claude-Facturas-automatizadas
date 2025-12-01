@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import SearchLoading from '@/components/SearchLoading'
+import { getGroupNameForUser } from '@/lib/user-groups'
 
 interface SearchResult {
   id: string
@@ -27,6 +28,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [user, setUser] = useState('')
+  const [userGroup, setUserGroup] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [totalMailboxes, setTotalMailboxes] = useState(535)
   const router = useRouter()
@@ -35,11 +37,17 @@ export default function SearchPage() {
     // Verificar si está autenticado
     const token = localStorage.getItem('token')
     const savedUser = localStorage.getItem('user')
+    const savedUserEmail = localStorage.getItem('userEmail')
 
     if (!token) {
       router.push('/')
     } else {
       setUser(savedUser || '')
+      // Obtener el grupo asignado al usuario
+      if (savedUserEmail) {
+        const groupName = getGroupNameForUser(savedUserEmail)
+        setUserGroup(groupName)
+      }
     }
   }, [router])
 
@@ -164,6 +172,7 @@ export default function SearchPage() {
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    localStorage.removeItem('userEmail')
     router.push('/')
   }
 
@@ -175,12 +184,17 @@ export default function SearchPage() {
 
   return (
     <>
-      {loading && <SearchLoading progress={progress} total={totalMailboxes} estimatedTime={15} />}
+      {loading && <SearchLoading progress={progress} total={totalMailboxes} estimatedTime={15} groupName={userGroup} />}
     <div style={styles.container}>
       <div style={styles.header}>
         <h1 style={styles.title}>🔍 Buscador de Facturas</h1>
         <div style={styles.userInfo}>
-          <span style={styles.userName}>👤 {user}</span>
+          <div style={styles.userDetails}>
+            <span style={styles.userName}>👤 {user}</span>
+            {userGroup && (
+              <span style={styles.userGroup}>📁 {userGroup}</span>
+            )}
+          </div>
           <button onClick={handleLogout} style={styles.logoutBtn}>
             Salir
           </button>
@@ -221,9 +235,20 @@ export default function SearchPage() {
           </button>
         </form>
 
-        <p style={styles.hint}>
-          💡 Busca por: nombre de empresa (Decathlon), número de pedido (ES51...), monto (€500), o cualquier texto
-        </p>
+        <div style={styles.hintContainer}>
+          <p style={styles.hint}>
+            💡 Busca por: nombre de empresa (Decathlon), número de pedido (ES51...), monto (€500), o cualquier texto
+          </p>
+          {userGroup ? (
+            <p style={styles.groupInfo}>
+              🔎 Buscando solo en: <strong>{userGroup}</strong>
+            </p>
+          ) : (
+            <p style={styles.allCompanyInfo}>
+              🌐 Buscando en toda la empresa
+            </p>
+          )}
+        </div>
       </div>
 
       {error && !loading && (
@@ -310,9 +335,24 @@ const styles = {
     alignItems: 'center',
     gap: '15px',
   },
+  userDetails: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+    alignItems: 'flex-end',
+  },
   userName: {
     fontSize: '14px',
     color: '#666',
+    fontWeight: '500' as const,
+  },
+  userGroup: {
+    fontSize: '12px',
+    color: '#667eea',
+    fontWeight: '600' as const,
+    background: '#f0f2ff',
+    padding: '3px 10px',
+    borderRadius: '12px',
   },
   logoutBtn: {
     padding: '8px 16px',
@@ -365,10 +405,35 @@ const styles = {
     cursor: 'pointer',
     whiteSpace: 'nowrap' as const,
   },
+  hintContainer: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '8px',
+  },
   hint: {
     fontSize: '13px',
     color: '#666',
     margin: 0,
+  },
+  groupInfo: {
+    fontSize: '13px',
+    color: '#667eea',
+    fontWeight: '600' as const,
+    margin: 0,
+    padding: '8px 12px',
+    background: '#f0f2ff',
+    borderRadius: '6px',
+    border: '1px solid #e0e5ff',
+  },
+  allCompanyInfo: {
+    fontSize: '13px',
+    color: '#ff9800',
+    fontWeight: '600' as const,
+    margin: 0,
+    padding: '8px 12px',
+    background: '#fff8e1',
+    borderRadius: '6px',
+    border: '1px solid #ffe0b2',
   },
   error: {
     background: '#fee',

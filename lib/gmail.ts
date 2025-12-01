@@ -62,7 +62,10 @@ function getDirectoryClient() {
 
   const auth = new google.auth.GoogleAuth({
     credentials,
-    scopes: ['https://www.googleapis.com/auth/admin.directory.user.readonly'],
+    scopes: [
+      'https://www.googleapis.com/auth/admin.directory.user.readonly',
+      'https://www.googleapis.com/auth/admin.directory.group.member.readonly',
+    ],
     clientOptions: {
       subject: adminEmail, // El admin que ejecutará la consulta
     },
@@ -71,6 +74,53 @@ function getDirectoryClient() {
   return google.admin({ version: 'directory_v1', auth })
 }
 
+const groupMembersCache: { [groupEmail: string]: { members: string[]; timestamp: number } } = {}
+
+export async function getGroupMembers(groupEmail: string): Promise<string[]> {
+  const cached = groupMembersCache[groupEmail]
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log('Using cache for group', groupEmail)
+    return cached.members
+  }
+
+  console.log('Getting members for group', groupEmail)
+
+  try {
+    const admin = getDirectoryClient()
+    const allMembers: string[] = []
+    let pageToken: string | undefined
+
+    do {
+      const response = await admin.members.list({
+        groupKey: groupEmail,
+        maxResults: 200,
+        pageToken,
+      })
+
+      const members = response.data.members || []
+
+      for (const member of members) {
+        if (member.email) {
+          allMembers.push(member.email)
+        }
+      }
+
+      pageToken = response.data.nextPageToken || undefined
+    } while (pageToken)
+
+    console.log('Found', allMembers.length, 'members in group', groupEmail)
+
+    groupMembersCache[groupEmail] = {
+      members: allMembers,
+      timestamp: Date.now(),
+    }
+
+    return allMembers
+  } catch (error) {
+    console.error('Error getting group members', groupEmail, error)
+    throw new Error('Could not get members for group. Check Directory API permissions.')
+  }
+}
 // Función para obtener todos los usuarios del dominio
 async function getAllDomainUsers(): Promise<string[]> {
   // Verificar caché
@@ -126,37 +176,42 @@ async function getAllDomainUsers(): Promise<string[]> {
   }
 }
 
-// Helper para buscar en múltiples buzones
+// Helper para buscar en multiples buzones
+// groupEmail: si se pasa, obtiene los miembros del grupo y busca en sus buzones
 export async function searchInAllMailboxes(
   query: string,
   maxResults = 50,
-  onProgress?: (processed: number, total: number) => void
+  onProgress?: (processed: number, total: number) => void,
+  groupEmail?: string
 ) {
   let mailboxes: string[]
 
-  // Opción 1: Si GMAIL_MAILBOXES está configurado, usar solo esos buzones (más rápido)
-  const mailboxesEnv = process.env.GMAIL_MAILBOXES
-  
-  if (mailboxesEnv && mailboxesEnv.trim()) {
-    console.log('📧 Usando lista específica de buzones')
-    mailboxes = mailboxesEnv.split(',').map(email => email.trim())
+  // Si se especifica un grupo, obtener sus miembros y buscar en sus buzones
+  if (groupEmail) {
+    console.log('Searching in group members:', groupEmail)
+    mailboxes = await getGroupMembers(groupEmail)
   } else {
-    // Opción 2: Obtener TODOS los usuarios del dominio
-    console.log('🌐 Buscando en todos los buzones del dominio')
-    mailboxes = await getAllDomainUsers()
+    const mailboxesEnv = process.env.GMAIL_MAILBOXES
+
+    if (mailboxesEnv && mailboxesEnv.trim()) {
+      console.log('Using specific mailboxes list')
+      mailboxes = mailboxesEnv.split(',').map(email => email.trim())
+    } else {
+      console.log('Searching in all domain mailboxes')
+      mailboxes = await getAllDomainUsers()
+    }
   }
 
-  console.log(`🔎 Buscando en ${mailboxes.length} buzones...`)
+  console.log('Searching in', mailboxes.length, 'mailboxes...')
 
   const allResults: any[] = []
   const resultsPerMailbox = Math.max(1, Math.ceil(maxResults / mailboxes.length))
 
-  // Buscar en paralelo en grupos de 20 buzones para no saturar la API
   const BATCH_SIZE = 20
-  
+
   for (let i = 0; i < mailboxes.length; i += BATCH_SIZE) {
     const batch = mailboxes.slice(i, i + BATCH_SIZE)
-    
+
     await Promise.all(
       batch.map(async (mailbox) => {
         try {
@@ -169,37 +224,30 @@ export async function searchInAllMailboxes(
           })
 
           if (response.data.messages) {
-            // Agregar info del buzón a cada mensaje
             const messagesWithMailbox = response.data.messages.map((msg) => ({
               ...msg,
               _mailbox: mailbox,
-              internalDate: parseInt(msg.internalDate || '0'), // Capturar fecha aquí
+              internalDate: parseInt(msg.internalDate || '0'),
             }))
             allResults.push(...messagesWithMailbox)
           }
         } catch (error) {
-          // Silenciar errores individuales (ej: buzón sin permisos, vacío, etc.)
-          console.error(`⚠️  Error buscando en ${mailbox}:`, (error as Error).message)
+          console.error('Error searching in', mailbox, (error as Error).message)
         }
       })
     )
 
-    // Reportar progreso después de cada batch
     if (onProgress) {
       const processed = Math.min(i + BATCH_SIZE, mailboxes.length)
       onProgress(processed, mailboxes.length)
     }
   }
 
-  console.log(`✅ Encontrados ${allResults.length} resultados en total`)
-  // ORDENAR por fecha descendente (más recientes primero)
+  console.log('Found', allResults.length, 'results total')
   allResults.sort((a, b) => b.internalDate - a.internalDate)
 
-  console.log(`📅 Resultados ordenados por fecha`)
-
-  return allResults.slice(0, maxResults) // Limitar al máximo solicitado
+  return allResults.slice(0, maxResults)
 }
-
 // Helper para obtener detalles de un mensaje
 export async function getMessageDetails(messageId: string, mailbox: string) {
   try {

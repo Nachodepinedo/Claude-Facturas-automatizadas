@@ -6,9 +6,10 @@ interface SearchLoadingProps {
   progress?: number
   total?: number
   estimatedTime?: number
+  groupName?: string | null
 }
 
-export default function SearchLoading({ progress = 0, total = 535, estimatedTime = 15 }: SearchLoadingProps) {
+export default function SearchLoading({ progress = 0, total = 535, estimatedTime = 15, groupName = null }: SearchLoadingProps) {
   const percentage = total > 0 ? Math.round((progress / total) * 100) : 0
   const remainingTime = Math.max(0, Math.round(estimatedTime * (1 - progress / total)))
 
@@ -16,7 +17,9 @@ export default function SearchLoading({ progress = 0, total = 535, estimatedTime
     <div style={styles.overlay}>
       <div style={styles.container}>
         <div style={styles.header}>
-          <h2 style={styles.title}>🔍 Buscando en toda la empresa...</h2>
+          <h2 style={styles.title}>
+            🔍 {groupName ? `Buscando en ${groupName}...` : 'Buscando en toda la empresa...'}
+          </h2>
           <p style={styles.subtitle}>⏱️ Tiempo estimado: ~{remainingTime} segundos</p>
         </div>
 

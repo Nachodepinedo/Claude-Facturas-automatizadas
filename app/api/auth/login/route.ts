@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         token,
-        user: email.split('@')[0],
+        user: email.split("@")[0],
+        userEmail: email, // Email completo para mapear al grupo
       })
     } else {
       return NextResponse.json(

@@ -48,6 +48,8 @@ gmail-credentials.json
 secrets/
 *.secret
 
+# Nota: lib/user-groups.ts ahora es seguro - lee de variables de entorno
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
