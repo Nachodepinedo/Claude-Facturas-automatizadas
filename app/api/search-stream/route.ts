@@ -123,19 +123,25 @@ export async function POST(request: NextRequest) {
 
     // Extraer email del usuario y obtener su grupo asignado
     const userEmail = extractEmailFromToken(auth)
-    let specificGroup: string | undefined
-    
-    if (userEmail) {
-      const groupEmail = getGroupForUser(userEmail)
-      const groupName = getGroupNameForUser(userEmail)
-      
-      if (groupEmail) {
-        specificGroup = groupEmail
-        console.log(`👥 Usuario ${userEmail} → Buscando en grupo: ${groupName} (${groupEmail})`)
-      } else {
-        console.log(`⚠️  Usuario ${userEmail} sin grupo asignado, buscando en toda la empresa`)
-      }
+    if (!userEmail) {
+      return new Response(
+        JSON.stringify({ error: 'Token inválido' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      )
     }
+
+    const groupEmail = getGroupForUser(userEmail)
+    const groupName = getGroupNameForUser(userEmail)
+
+    if (!groupEmail) {
+      console.log(`⚠️  Usuario ${userEmail} sin grupo asignado - USER_GROUP_MAPPINGS: ${process.env.USER_GROUP_MAPPINGS}`)
+      return new Response(
+        JSON.stringify({ error: 'Usuario no tiene grupo asignado. Contacta al administrador.' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log(`👥 Usuario ${userEmail} → Buscando en grupo: ${groupName} (${groupEmail})`)
 
     const encoder = new TextEncoder()
     const stream = new ReadableStream({
@@ -151,7 +157,7 @@ export async function POST(request: NextRequest) {
             console.log(`📊 Progreso SSE: ${processed}/${total}`)
           }
 
-          const messages = await searchInAllMailboxes(gmailQuery, 50, sendProgress, specificGroup)
+          const messages = await searchInAllMailboxes(gmailQuery, 50, sendProgress, groupEmail)
 
           console.log(`📧 Encontrados ${messages.length} correos`)
 
