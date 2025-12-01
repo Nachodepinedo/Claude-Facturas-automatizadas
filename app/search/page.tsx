@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import SearchLoading from '@/components/SearchLoading'
-import { getGroupNameForUser } from '@/lib/user-groups'
 
 interface SearchResult {
   id: string
@@ -37,17 +36,24 @@ export default function SearchPage() {
     // Verificar si está autenticado
     const token = localStorage.getItem('token')
     const savedUser = localStorage.getItem('user')
-    const savedUserEmail = localStorage.getItem('userEmail')
 
     if (!token) {
       router.push('/')
     } else {
       setUser(savedUser || '')
-      // Obtener el grupo asignado al usuario
-      if (savedUserEmail) {
-        const groupName = getGroupNameForUser(savedUserEmail)
-        setUserGroup(groupName)
-      }
+      // Obtener el grupo asignado al usuario desde el API
+      fetch('/api/user-group', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.groupName) {
+            setUserGroup(data.groupName)
+          }
+        })
+        .catch(err => console.error('Error getting user group:', err))
     }
   }, [router])
 
